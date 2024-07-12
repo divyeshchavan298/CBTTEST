@@ -11,11 +11,8 @@ namespace DemoTask.DAL
         {
         }
 
-
         public virtual DbSet<ClientMaster> clientMaster { get; set; }
         public virtual DbSet<OtpMaster> otpMasters { get; set; }
-
-
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {

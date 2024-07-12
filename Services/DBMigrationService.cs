@@ -10,12 +10,11 @@ namespace DemoTask.Services
 
         public DBMigrationService(CbtDbContext cbtDbContext)
         {
-            Console.WriteLine("Success");
             _cbtDbContext = cbtDbContext;
         }
         public string ApplyMigration()
         {
-            Console.WriteLine("In ApplyMigration: Step 1");
+            Console.WriteLine("Migration Started");
             try
             {
                 if (_cbtDbContext == null)
@@ -26,14 +25,12 @@ namespace DemoTask.Services
 
                 _cbtDbContext.Database.Migrate();
                 Console.WriteLine("Success");
+                Console.WriteLine("Migration End");
                 return "Success";
             }
             catch (Exception ex)
             {
-                Console.WriteLine("In ApplyMigration: Step 6");
                 Console.WriteLine("Exception " + ex);
-
-                //_logger.LogError(ex.ToString() + ex.Message);
                 return ex.ToString() + ex.Message;
             }
         }

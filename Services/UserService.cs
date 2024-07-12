@@ -35,7 +35,7 @@ namespace DemoTask.Services
                 ClientMaster objClient = _cbtDbContext.clientMaster.Where(x => x.sIcNumber == objLoginReq.sIcNumber).FirstOrDefault();
                 if (objClient == null)
                 {
-                    return Results.NotFound("IC Number not found.");
+                    return Results.NotFound("IC Number not available.");
                 }
 
                 UserRes objUser = new UserRes()
@@ -46,7 +46,8 @@ namespace DemoTask.Services
                     sMobileNo = objClient.sMobileNo,
                     bPrivacyPolicy = objClient.bPrivacyPolicy,
                 };
-                return Results.Ok(JsonSerializer.Serialize(objUser));
+                //return Results.Ok(JsonSerializer.Serialize(objUser));
+                return Results.Ok(objUser);
             }
             catch (Exception ex)
             {
@@ -100,7 +101,8 @@ namespace DemoTask.Services
                     sMobileNo = objRegisterUser.sMobileNo,
                     bPrivacyPolicy = objClientMaster.bPrivacyPolicy,
                 };
-                return Results.Ok(JsonSerializer.Serialize(objUser));
+                return Results.Ok(objUser);
+                //return Results.Ok(JsonSerializer.Serialize(objUser));
             }
             catch (Exception ex)
             {
@@ -151,16 +153,15 @@ namespace DemoTask.Services
                     TimeSpan difference = (TimeSpan)(DateTime.Now - otpGrnTime);
                     int diff = Helper.Helper.OTPExceedTime - difference.Minutes;
                     if (Helper.Helper.OTPExceedTime > difference.Minutes)
-                    //if (objOtpMaster.dtOtpGentnTime > DateTime.Now.AddMinutes(-Helper.Helper.OTPExceedTime))
                     {
-                        if (objOtpMaster.nResendOTPCount >= 3)
+                        if (objOtpMaster.nResendOTPCount >= Convert.ToInt32(_env.OTPRESEND_LIMIT))
                         {
                             return Results.Ok("You have exceeded limit. Please wait " + diff + " minute before trying again");
                         }
                     }
                     else
                     {
-                        if (objOtpMaster.nResendOTPCount >= 3)
+                        if (objOtpMaster.nResendOTPCount >= Convert.ToInt32(_env.OTPRESEND_LIMIT))
                         {
                             objOtpMaster.nResendOTPCount = 0;
                         }
@@ -242,16 +243,15 @@ namespace DemoTask.Services
                     TimeSpan difference = (TimeSpan)(DateTime.Now - otpGrnTime);
                     int diff = Helper.Helper.OTPExceedTime - difference.Minutes;
                     if (Helper.Helper.OTPExceedTime > difference.Minutes)
-                    //if (objOtpMaster.dtOtpGentnTime > DateTime.Now.AddMinutes(-Helper.Helper.OTPExceedTime))
                     {
-                        if (objOtpMaster.nResendOTPCount >= 3)
+                        if (objOtpMaster.nResendOTPCount >= Convert.ToInt32(_env.OTPRESEND_LIMIT))
                         {
                             return Results.Ok("You have exceeded limit. Please wait " + diff + " minute before trying again");
                         }
                     }
                     else
                     {
-                        if (objOtpMaster.nResendOTPCount >= 3)
+                        if (objOtpMaster.nResendOTPCount >= Convert.ToInt32(_env.OTPRESEND_LIMIT))
                         {
                             objOtpMaster.nResendOTPCount = 0;
                         }
@@ -326,8 +326,6 @@ namespace DemoTask.Services
                     }
                 }
 
-                TimeSpan threshold = TimeSpan.FromMinutes(2) + TimeSpan.FromSeconds(30);
-
                 OtpMaster objOtpMaster = _cbtDbContext.otpMasters.Where(x => x.sIcNumber == objVerifyOtp.sIcNumber
                     && x.sOtpFor == objVerifyOtp.sOtpFor && x.bOtpVerify == false
                     && x.nOtpType == objVerifyOtp.nOtpType).FirstOrDefault(); //nOtpType in Case Of Mobile = 0, Email = 1
@@ -337,12 +335,17 @@ namespace DemoTask.Services
                     return Results.BadRequest("Invalid Otp");
                 }
 
+                string[] sExpiryTime = _env.OTPEXPIRE_TIME.Split(":");
+                int nMinute = Convert.ToInt32(sExpiryTime[0]);
+                int nSecond = Convert.ToInt32(sExpiryTime[1]);
+
+                TimeSpan threshold = TimeSpan.FromMinutes(nMinute) + TimeSpan.FromSeconds(nSecond);
 
                 var otpGrnTime = objOtpMaster.dtOtpGentnTime;
                 TimeSpan difference = (TimeSpan)(DateTime.Now - otpGrnTime);
                 if (difference < threshold)
                 {
-                    //"The time difference is less than 2 minutes and 30 seconds.");
+                    //"The time difference is less than specified time
                     if (objOtpMaster.sOtp == objVerifyOtp.sOtp)
                     {
                         objOtpMaster.bOtpVerify = true;
@@ -379,7 +382,7 @@ namespace DemoTask.Services
                 ClientMaster objClient = _cbtDbContext.clientMaster.Where(x => x.sIcNumber == objUpdatePrivacy.sIcNumber).FirstOrDefault();
                 if (objClient == null)
                 {
-                    return Results.BadRequest("IC Number not found");
+                    return Results.BadRequest("IC Number not available");
                 }
 
                 objClient.bPrivacyPolicy = objUpdatePrivacy.bPrivacyPolicy;
@@ -417,7 +420,7 @@ namespace DemoTask.Services
                 ClientMaster objClient = _cbtDbContext.clientMaster.Where(x => x.sIcNumber == objUpdateAccountPin.sIcNumber).FirstOrDefault();
                 if (objClient == null)
                 {
-                    return Results.BadRequest("IC Number not found");
+                    return Results.BadRequest("IC Number not available");
                 }
 
                 objClient.sPin = objUpdateAccountPin.sPin; //We also can encrypt and store this pin
@@ -455,7 +458,7 @@ namespace DemoTask.Services
                 ClientMaster objClient = _cbtDbContext.clientMaster.Where(x => x.sIcNumber == objBiometric.sIcNumber).FirstOrDefault();
                 if (objClient == null)
                 {
-                    return Results.BadRequest("IC Number not found");
+                    return Results.BadRequest("IC Number not available");
                 }
 
                 objClient.sBiometric = objBiometric.sBiometric;
@@ -492,10 +495,10 @@ namespace DemoTask.Services
                 ClientMaster objClient = _cbtDbContext.clientMaster.Where(x => x.sIcNumber == objBiometric.sIcNumber).FirstOrDefault();
                 if (objClient == null)
                 {
-                    return Results.BadRequest("IC Number not found");
+                    return Results.BadRequest("IC Number not available");
                 }
 
-                if(objClient.sBiometric.Trim() != objBiometric.sBiometric.Trim())
+                if (objClient.sBiometric.Trim() != objBiometric.sBiometric.Trim())
                 {
                     return Results.BadRequest("Biometric Not Matched");
                 }
@@ -531,10 +534,10 @@ namespace DemoTask.Services
                 ClientMaster objClient = _cbtDbContext.clientMaster.Where(x => x.sIcNumber == objVerifyPin.sIcNumber).FirstOrDefault();
                 if (objClient == null)
                 {
-                    return Results.BadRequest("IC Number not found");
+                    return Results.BadRequest("IC Number not available");
                 }
 
-                if(objClient.sPin.Trim() != objVerifyPin.sPin.Trim())
+                if (objClient.sPin.Trim() != objVerifyPin.sPin.Trim())
                 {
                     return Results.BadRequest("Pin Not Matched");
                 }
